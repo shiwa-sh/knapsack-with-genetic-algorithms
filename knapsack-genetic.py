@@ -1,18 +1,30 @@
 import random
 from math import pow
-# from sklearn import preprocessing
 
+# total weight of the knapsack
 total_weight = 0
 val = []
 w = []
 
+"""
+    chromosome structure: an array of binary values 
+    with length of item count
+    1 means that item is selected
+    0 means that item is not selected
+"""
+
 
 def initial_chromosome_generation(population_size, chromosome_size):
+    """
+    Generate initial chromosomes for the population
+    :param population_size:
+    :param chromosome_size:
+    :return:
+    """
     first_generation = []
     for ch in range(population_size):
         chromosome = []
         for j in range(chromosome_size):
-
             chromosome.append(random.randint(0, 1))
 
         first_generation.append(chromosome)
@@ -21,6 +33,14 @@ def initial_chromosome_generation(population_size, chromosome_size):
 
 
 def fitness_function(population, population_size, chromosome_size):
+    """
+    Calculate fitness of each chromosome in the population
+    if the it's 1 means that chromosome is selected and it's value is added to the fitness
+    :param population:
+    :param population_size:
+    :param chromosome_size:
+    :return:
+    """
     global total_weight, val, w  # global variables
     current_total_weight = 0
     fitness = []
@@ -30,53 +50,44 @@ def fitness_function(population, population_size, chromosome_size):
             if population[i][k] == 1:
                 current_fitness += val[k]
                 current_total_weight += w[k]
-
+        # if total weight of the chromosome is greater than the total weight of the knapsack that chromosome is ignored
         if current_total_weight <= total_weight:
             fitness.append(current_fitness)
         else:
             fitness.append(0)
-
+        # reinitialize variables
+        current_total_weight = 0
+        current_fitness = 0
     return fitness
 
 
-# def selection(population):
-#     population_fitness = fitness_function(population, len(population), len(population[0]))
-#     ''' Roulette selection '''
-#     total_fitness = sum(population_fitness)
-#     select_probability = []
-#     # for i in range(len(population)):
-#     #     select_probability.append(population_fitness[i] / total_fitness)
-#
-#     probability = []
-#     previous_probability = 0
-#     for i in range(len(select_probability)):
-#         probability.append(select_probability[i] + previous_probability)
-#
-#     normalized_probability = preprocessing.normalize(probability, norm='l1')
-#     selected_population = []
-#     current_fitness_sum = 0
-#     for j in range(2):
-#         bound = random.uniform(0, max(probability))
-#         for k in range (len(population[0])):
-#             current_fitness_sum = current_fitness_sum + normalized_probability[k]
-#             if current_fitness_sum >= bound:
-#                 selected_population.append(population[k])
-#                 break
+def selection(population, population_size, chromosome_size):
+    population_fitness = fitness_function(population, population_size, chromosome_size)
+    total_fitness = sum(population_fitness)
+    probability = random.randint(0, total_fitness)
+    selected = []
+    temp_fitness_sum = 0
+    for i in range(2):
+        for j in range(population_size):
+            temp_fitness_sum = temp_fitness_sum + population_fitness[j]
+            if temp_fitness_sum >= probability:
+                selected.append(population[j])
+                break
+        temp_fitness_sum = 0
+    return selected
 
-def selection(population):
-    population_fitness = fitness_function(population, len(population), len(population[0]))
-    selected_population = []
-    # first chromosome with the largest fitness
-    selected_population.append(population_fitness.index(max(selected_population)))
-    # second chromosome with the largest fitness
-    selected_population.append(selected_population.index(sorted(population_fitness)[-2]))
-    return selected_population
 
 def crossover(first_chromosome, second_chromosome):
-
-    crossover_limit = random.randint(1, len(first_chromosome)-1)
+    """
+    Crossover between two chromosomes
+    select a random point to crossover
+    and concatenate the two chromosomes at the selected point
+    :param first_chromosome:
+    :param second_chromosome:
+    :return:
+    """
+    crossover_limit = random.randint(1, len(first_chromosome) - 1)
     crossed_chromosome = []
-    new_chromosome = []
     new_chromosome = first_chromosome[:crossover_limit] + second_chromosome[crossover_limit:]
     crossed_chromosome.append(new_chromosome)
     new_chromosome = second_chromosome[:crossover_limit] + first_chromosome[crossover_limit:]
@@ -85,57 +96,61 @@ def crossover(first_chromosome, second_chromosome):
     return crossed_chromosome
 
 
-def mutation(chromosome):
-
-    for i in range(len(chromosome)):
-        mutation_rate = random.uniform(0,1)
-        if mutation_rate < 0.5:
-            chromosome[i] = 1 if chromosome[i] == 0 else 0
-    return chromosome
+def mutation(population):
+    """
+    Mutate a chromosome by randomly changing a bit
+    change the bit to 1 or 0
+    chance of mutation is less than 20%
+    :param population:
+    :return:
+    """
+    row_index = random.randint(0, len(population) - 1)
+    col_index = random.randint(0, len(population[0]) - 1)
+    mutation_rate = random.uniform(0, 1)
+    if mutation_rate < 0.2:
+        population[row_index][col_index] = 1 if population[row_index][col_index] == 0 else 0
+    return population
 
 
 if __name__ == '__main__':
     population_max_size = 100
-    mutation_rate = 0.1
+    # mutation_rate = 0.1
     crossover_rate = 0.5
     generation_number = 0
     N = int(input("Enter number of items : "))
-    val=list(map(int,input("\nEnter the values : ").strip().split()))[:N]
-    w=list(map(int,input("\nEnter the weights : ").strip().split()))[:N]
-    W = int(input("Enter the max capacity : "))
-
+    val = list(map(int, input("\nEnter the values : ").strip().split()))[:N]
+    w = list(map(int, input("\nEnter the weights : ").strip().split()))[:N]
+    total_weight = int(input("Enter the max capacity : "))
+    """
+     population size is 2^N if N is less than 7
+     otherwise it's 100
+    """
     if pow(2, N) <= 100:
-        population_size = pow(2, N)
+        population_size = int(pow(2, N))
     else:
         population_size = population_max_size
-
+    # size of each chromosome is equal to the number of items
     chromosome_size = N
     population = initial_chromosome_generation(population_size, chromosome_size)
-    fitness_values = []
-    for i in range(len(population)):
-        fitness_values.append(fitness_function(population[i]))
-    first_generation = initial_chromosome_generation(population_size, chromosome_size)
 
-    while True:
+    max_number_of_generations = 100
+    # reproduce generation 100 times
+    while max_number_of_generations:
         generation_number += 1
-        print("Generation number: ", generation_number)
-        print("Population: ", population)
-        print("Fitness values: ", fitness_values)
-        selected_population = selection(population, fitness_values)
-        print("Selected population: ", selected_population)
-         mutated_population = mutation(selected_population, mutation_rate)
-        print("Mutated population: ", mutated_population)
-        crossed_population = crossover(mutated_population, crossover_rate)
-        print("Crossed population: ", crossed_population)
-        fitness_values = []
-        for i in range(len(crossed_population)):
-            fitness_values.append(fitness_function(crossed_population[i]))
-        population = crossed_population
-        print("Fitness values: ", fitness_values)
-        if fitness_values[0] == chromosome_size:
-            print("Solution found in generation number: ", generation_number)
-            print("Solution: ", population[0])
-                # break
+        selected_population = selection(population, population_size, chromosome_size)
+        crossed_population = crossover(selected_population[0], selected_population[1])
+        population = population + crossed_population
+        population_size += 2
+        population = mutation(population)
 
+        max_number_of_generations -= 1
 
-
+    fit = fitness_function(population, population_size, chromosome_size)
+    max_profit = max(fit)
+    print("\nMaximum solution : ", max_profit)
+    print("\nselected items : [", end="")
+    index = fit.index(max_profit)
+    for i in range(chromosome_size):
+        if population[index][i] == 1:
+            print(i + 1, end=" ")
+    print("]")
