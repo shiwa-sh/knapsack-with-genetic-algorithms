@@ -17,9 +17,6 @@ w = []
 def initial_chromosome_generation(population_size, chromosome_size):
     """
     Generate initial chromosomes for the population
-    :param population_size:
-    :param chromosome_size:
-    :return:
     """
     first_generation = []
     for ch in range(population_size):
@@ -35,11 +32,7 @@ def initial_chromosome_generation(population_size, chromosome_size):
 def fitness_function(population, population_size, chromosome_size):
     """
     Calculate fitness of each chromosome in the population
-    if the it's 1 means that chromosome is selected and it's value is added to the fitness
-    :param population:
-    :param population_size:
-    :param chromosome_size:
-    :return:
+    if it's 1 means that item is selected, and it's value will be added to the fitness
     """
     global total_weight, val, w  # global variables
     current_total_weight = 0
@@ -62,11 +55,19 @@ def fitness_function(population, population_size, chromosome_size):
 
 
 def selection(population, population_size, chromosome_size):
+    """
+    Roulette Wheel Selection (RWS)
+    a set of N elements, each with a fitness F0 ... Fn, it finds the sum
+    of the fitness for each element in the set and gives each element a chance to be selected with the
+    individual fitness over the sum of the fitness.
+    """
     population_fitness = fitness_function(population, population_size, chromosome_size)
     total_fitness = sum(population_fitness)
     probability = random.randint(0, total_fitness)
     selected = []
     temp_fitness_sum = 0
+    # two chromosome are selected with the probability
+    # of the fitness of the chromosome
     for i in range(2):
         for j in range(population_size):
             temp_fitness_sum = temp_fitness_sum + population_fitness[j]
@@ -82,14 +83,14 @@ def crossover(first_chromosome, second_chromosome):
     Crossover between two chromosomes
     select a random point to crossover
     and concatenate the two chromosomes at the selected point
-    :param first_chromosome:
-    :param second_chromosome:
-    :return:
     """
+    # randomly select a point to crossover
     crossover_limit = random.randint(1, len(first_chromosome) - 1)
     crossed_chromosome = []
+    # crossover the first chromosome
     new_chromosome = first_chromosome[:crossover_limit] + second_chromosome[crossover_limit:]
     crossed_chromosome.append(new_chromosome)
+    # crossover the second chromosome
     new_chromosome = second_chromosome[:crossover_limit] + first_chromosome[crossover_limit:]
     crossed_chromosome.append(new_chromosome)
 
@@ -101,11 +102,11 @@ def mutation(population):
     Mutate a chromosome by randomly changing a bit
     change the bit to 1 or 0
     chance of mutation is less than 20%
-    :param population:
-    :return:
     """
+    # randomly select a row and column in 2d array of population
     row_index = random.randint(0, len(population) - 1)
     col_index = random.randint(0, len(population[0]) - 1)
+    # mutation probability
     mutation_rate = random.uniform(0, 1)
     if mutation_rate < 0.2:
         population[row_index][col_index] = 1 if population[row_index][col_index] == 0 else 0
@@ -114,8 +115,6 @@ def mutation(population):
 
 if __name__ == '__main__':
     population_max_size = 100
-    # mutation_rate = 0.1
-    crossover_rate = 0.5
     generation_number = 0
     N = int(input("Enter number of items : "))
     val = list(map(int, input("\nEnter the values : ").strip().split()))[:N]
@@ -131,8 +130,9 @@ if __name__ == '__main__':
         population_size = population_max_size
     # size of each chromosome is equal to the number of items
     chromosome_size = N
+    # initial generation of the population
     population = initial_chromosome_generation(population_size, chromosome_size)
-
+    # maximum number of reproduce of generations
     max_number_of_generations = 100
     # reproduce generation 100 times
     while max_number_of_generations:
